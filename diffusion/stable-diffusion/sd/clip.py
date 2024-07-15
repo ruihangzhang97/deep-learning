@@ -47,8 +47,6 @@ class CLIPLayer(nn.Module):
         
         return x
 
-
-
 class CLIP(nn.Module):
     def __init__(self):
         self.embedding = CLIPEmbedding(49408, 768, 77) # (vocab_size, embed_size, max_len)
