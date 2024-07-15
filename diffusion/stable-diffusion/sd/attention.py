@@ -65,7 +65,7 @@ class CrossAttention(nn.Module):
     
     def forward(self, x, y):
         # x(latent): (batch_size, seq_len_Q, dim_Q)
-        # y(context): (batch_size, seq_len_KV, dim_KV) = (batch_size, 77, 768)
+        # y(context/prompt): (batch_size, seq_len_KV, dim_KV) = (batch_size, 77, 768)
 
         input_shape = x.shape
         batch_size, seq_len, d_embed = input_shape
@@ -81,11 +81,11 @@ class CrossAttention(nn.Module):
         k = k.view(interim_shape.transpose(1, 2))
         v = v.view(interim_shape.transpose(1, 2))
 
-        weight = q @ k.transpose
+        weight = q @ k.transpose(-1, -2)
 
         weight /= math.sqrt(self.d_head)
 
-        weight = F.softmax(weight, dim=-1)
+        weight = F.softmax(weight, dim=-1) # no casual mask since pixels and words are related
 
         output = weight @ v
 
