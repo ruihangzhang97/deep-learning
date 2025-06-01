@@ -22,12 +22,12 @@ class DDPMSampler:
         timesteps = (np.arange(0, num_inference_steps) * step_ratio).round()[::-1].copy().astype(np.int64)
         self.timesteps = torch.from_numpy(timesteps)
 
-    def _get_previous_timestep(self, timestep: int) -> int:
+    def get_previous_timestep(self, timestep: int) -> int:
         prev_t = timestep - self.num_train_timesteps // self.num_inference_steps
         return prev_t
     
-    def _get_variance(self, timestep: int) -> torch.Tensor:
-        prev_t = self._get_previous_timestep(timestep)
+    def get_variance(self, timestep: int) -> torch.Tensor:
+        prev_t = self.get_previous_timestep(timestep)
 
         alpha_prod_t = self.alphas_cumprod[timestep]
         alpha_prod_t_prev = self.alphas_cumprod[prev_t] if prev_t >= 0 else self.one
@@ -56,7 +56,7 @@ class DDPMSampler:
 
     def step(self, timestep: int, latents: torch.Tensor, model_output: torch.Tensor):
         t = timestep
-        prev_t = self._get_previous_timestep(t)
+        prev_t = self.get_previous_timestep(t)
 
         # 1. compute alphas, betas
         alpha_prod_t = self.alphas_cumprod[t]
@@ -85,11 +85,11 @@ class DDPMSampler:
             device = model_output.device
             noise = torch.randn(model_output.shape, generator=self.generator, device=device, dtype=model_output.dtype)
             # Compute the variance as per formula (7) from https://arxiv.org/pdf/2006.11239.pdf
-            variance = (self._get_variance(t) ** 0.5) * noise
+            variance = (self.get_variance(t) ** 0.5) * noise
         
         # sample from N(mu, sigma) = X can be obtained by X = mu + sigma * N(0, 1)
         # the variable "variance" is already multiplied by the noise N(0, 1)
-        pred_prev_sample = pred_prev_sample + variance
+        pred_prev_sample = pred_prev_sample + variance # variance here is already multiplied by noise
 
         return pred_prev_sample
     
